@@ -581,6 +581,7 @@ func WaitReady(sel interface{}, opts ...QueryOption) QueryAction {
 // WaitVisible is an element query action that waits until the element matching
 // the selector is visible.
 func WaitVisible(sel interface{}, opts ...QueryOption) QueryAction {
+	fmt.Println(fmt.Sprintf("Waiting for %s to become visible", sel))
 	return Query(sel, append(opts, NodeVisible)...)
 }
 
