@@ -130,6 +130,7 @@ type Selector struct {
 // The NodeNotPresent option causes the query to wait until there are no
 // element nodes matching the selector.
 func Query(sel interface{}, opts ...QueryOption) QueryAction {
+	fmt.Println(fmt.Sprintf("Querying for %s", sel))
 	s := &Selector{
 		sel: sel,
 		exp: 1,
@@ -237,6 +238,7 @@ func (s *Selector) selAsString() string {
 // waitReady waits for the specified nodes to be ready.
 func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContextID, *cdp.Node) error) func(context.Context, *cdp.Frame, runtime.ExecutionContextID, ...cdp.NodeID) ([]*cdp.Node, error) {
 	return func(ctx context.Context, cur *cdp.Frame, execCtx runtime.ExecutionContextID, ids ...cdp.NodeID) ([]*cdp.Node, error) {
+		fmt.Println(fmt.Sprintf("selector %s is waiting", s))
 		nodes := make([]*cdp.Node, len(ids))
 		cur.RLock()
 		for i, id := range ids {
@@ -435,6 +437,7 @@ func WaitFunc(wait func(context.Context, *cdp.Frame, runtime.ExecutionContextID,
 // NodeReady is an element query option to wait until all queried element nodes
 // have been sent by the browser.
 func NodeReady(s *Selector) {
+	fmt.Println(fmt.Sprintf("Wait for %s to be ready", s))
 	WaitFunc(s.waitReady(nil))(s)
 }
 
