@@ -593,8 +593,8 @@ func WaitReady(sel interface{}, opts ...QueryOption) QueryAction {
 
 // WaitVisible is an element query action that waits until the element matching
 // the selector is visible.
-func WaitVisible(sel interface{}, opts ...QueryOption) QueryAction {
-	Logger.Debug("Waitinf for %s to become visible", sel)
+func WaitVisible(targetUuid string, sel interface{}, opts ...QueryOption) QueryAction {
+	Logger.Debug("%s Waiting for %s to become visible", targetUuid, sel)
 	return Query(sel, append(opts, NodeVisible)...)
 }
 
