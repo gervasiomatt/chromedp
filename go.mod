@@ -7,6 +7,7 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.4
+	github.com/honeyscience/honey-logger-go v1.1.0 // indirect
 	github.com/mailru/easyjson v0.7.6
 	golang.org/x/sys v0.0.0-20210122093101-04d7465088b8 // indirect
 )
