@@ -190,6 +190,7 @@ func (b *Browser) execute(ctx context.Context, method string, params easyjson.Ma
 		Method: cdproto.MethodType(method),
 		Params: buf,
 	}
+	Logger.Debug("CHROMEDP: Sending command %s to browser", string(buf))
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -272,12 +273,17 @@ func (b *Browser) run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			Logger.Debug("CHROMEDP: RUN CONTEXT IS DONE")
 			return
 
 		case msg := <-b.cmdQueue:
 			if err := b.conn.Write(ctx, msg); err != nil {
+				Logger.Debug("CHROMEDP: Error received on command %s", err)
 				b.errf("%s", err)
 				continue
+			} else {
+				params, _ := msg.Params.MarshalJSON()
+				Logger.Debug("CHROMEDP: Message written successfully %s", string(params))
 			}
 
 		case t := <-b.newTabQueue:
@@ -295,6 +301,7 @@ func (b *Browser) run(ctx context.Context) {
 		case m := <-incomingQueue:
 			page, ok := b.pages[m.SessionID]
 			if !ok {
+				Logger.Debug("CHROMEDP: Received event from page already closed?")
 				// A page we recently closed still sending events.
 				continue
 			}
@@ -306,6 +313,7 @@ func (b *Browser) run(ctx context.Context) {
 			}
 
 		case <-b.LostConnection:
+			Logger.Debug("CHROMEDP: LOST CONNECTION DETECTED!")
 			return // to avoid "write: broken pipe" errors
 		}
 	}
