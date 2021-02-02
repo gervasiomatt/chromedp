@@ -252,8 +252,6 @@ func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContex
 		}
 		cur.RUnlock()
 
-		Logger.Debug("CHROMEDP: selector %s cur is unlocked", s.selAsString())
-
 		if check != nil {
 			errc := make(chan error, 1)
 			for _, n := range nodes {
@@ -274,7 +272,6 @@ func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContex
 			}
 			close(errc)
 			if first != nil {
-				Logger.Debug("CHROMEDP: selector %s is returning first", s.selAsString())
 				return nil, first
 			}
 		}
