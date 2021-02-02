@@ -120,6 +120,10 @@ func NewBrowser(ctx context.Context, urlstr string, opts ...BrowserOption) (*Bro
 	return b, nil
 }
 
+func (b *Browser) GetCommandQueueLength() int {
+	return len(b.cmdQueue)
+}
+
 func (b *Browser) newExecutorForTarget(ctx context.Context, targetID target.ID, sessionID target.SessionID) (*Target, error) {
 	if targetID == "" {
 		return nil, errors.New("empty target ID")
@@ -281,9 +285,6 @@ func (b *Browser) run(ctx context.Context) {
 				Logger.Debug("CHROMEDP: Error received on command %s", err)
 				b.errf("%s", err)
 				continue
-			} else {
-				params, _ := msg.Params.MarshalJSON()
-				Logger.Debug("CHROMEDP: Message written successfully %s", string(params))
 			}
 
 		case t := <-b.newTabQueue:
