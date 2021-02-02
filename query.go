@@ -239,7 +239,6 @@ func (s *Selector) selAsString() string {
 // waitReady waits for the specified nodes to be ready.
 func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContextID, *cdp.Node) error) func(context.Context, *cdp.Frame, runtime.ExecutionContextID, ...cdp.NodeID) ([]*cdp.Node, error) {
 	return func(ctx context.Context, cur *cdp.Frame, execCtx runtime.ExecutionContextID, ids ...cdp.NodeID) ([]*cdp.Node, error) {
-		Logger.Debug("CHROMEDP: selector %s is waiting ready", s.selAsString())
 		nodes := make([]*cdp.Node, len(ids))
 		cur.RLock()
 		for i, id := range ids {
