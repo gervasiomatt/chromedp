@@ -82,17 +82,17 @@ var DefaultExecAllocatorOptions = [...]ExecAllocatorOption{
 
 // NewExecAllocator creates a new context set up with an ExecAllocator, suitable
 // for use with NewContext.
-func NewExecAllocator(parent context.Context, opts ...ExecAllocatorOption) (context.Context, context.CancelFunc) {
-	Logger.Debug("CHROMEDP: Setting up new exec allocator")
+func NewExecAllocator(targetUuid string, parent context.Context, opts ...ExecAllocatorOption) (context.Context, context.CancelFunc) {
+	Logger.Debug("%s Setting up new exec allocator", targetUuid)
 	ctx, cancel := context.WithCancel(parent)
 	c := &Context{Allocator: setupExecAllocator(opts...)}
 
 	ctx = context.WithValue(ctx, contextKey{}, c)
 	cancelWait := func() {
 		cancel()
-		Logger.Debug("CHROMEDP: Context has been cancelled!!!!")
+		Logger.Debug("%s Context has been cancelled!!!!", targetUuid)
 		c.Allocator.Wait()
-		Logger.Debug("CHROMEDP: Allocator has freed up all resources")
+		Logger.Debug("%s Allocator has freed up all resources", targetUuid)
 	}
 	return ctx, cancelWait
 }

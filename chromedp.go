@@ -95,11 +95,12 @@ type Context struct {
 //
 // Note that NewContext doesn't allocate nor start a browser; that happens the
 // first time Run is used on the context.
-func NewContext(parent context.Context, opts ...ContextOption) (context.Context, context.CancelFunc) {
+func NewContext(targetUuid string, parent context.Context, opts ...ContextOption) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(parent)
 
 	c := &Context{cancel: cancel, first: true}
 	if pc := FromContext(parent); pc != nil {
+		Logger.Debug("%s Using parent context %s for browser", targetUuid, pc.Allocator)
 		c.Allocator = pc.Allocator
 		c.Browser = pc.Browser
 		// don't inherit Target, so that NewContext can be used to
@@ -122,6 +123,7 @@ func NewContext(parent context.Context, opts ...ContextOption) (context.Context,
 		o(c)
 	}
 	if c.Allocator == nil {
+		Logger.Debug("%s allocator is nil. This shouldn't happen", targetUuid)
 		c.Allocator = setupExecAllocator(DefaultExecAllocatorOptions[:]...)
 	}
 
@@ -160,6 +162,7 @@ func NewContext(parent context.Context, opts ...ContextOption) (context.Context,
 		}
 	}()
 	cancelWait := func() {
+		Logger.Debug("%s Browser cancelled", targetUuid)
 		cancel()
 		c.closedTarget.Wait()
 		// If we allocated, wait for the browser to stop.
