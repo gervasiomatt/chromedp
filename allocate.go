@@ -83,13 +83,16 @@ var DefaultExecAllocatorOptions = [...]ExecAllocatorOption{
 // NewExecAllocator creates a new context set up with an ExecAllocator, suitable
 // for use with NewContext.
 func NewExecAllocator(parent context.Context, opts ...ExecAllocatorOption) (context.Context, context.CancelFunc) {
+	Logger.Debug("CHROMEDP: Setting up new exec allocator")
 	ctx, cancel := context.WithCancel(parent)
 	c := &Context{Allocator: setupExecAllocator(opts...)}
 
 	ctx = context.WithValue(ctx, contextKey{}, c)
 	cancelWait := func() {
 		cancel()
+		Logger.Debug("CHROMEDP: Context has been cancelled!!!!")
 		c.Allocator.Wait()
+		Logger.Debug("CHROMEDP: Allocator has freed up all resources")
 	}
 	return ctx, cancelWait
 }
@@ -116,8 +119,10 @@ var allocTempDir string
 
 // Allocate satisfies the Allocator interface.
 func (a *ExecAllocator) Allocate(ctx context.Context, opts ...BrowserOption) (*Browser, error) {
+	Logger.Debug("CHROMEDP: Allocate is running")
 	c := FromContext(ctx)
 	if c == nil {
+		Logger.Debug("CHROMEDP: Invalid context within allocate?")
 		return nil, ErrInvalidContext
 	}
 
@@ -197,19 +202,23 @@ func (a *ExecAllocator) Allocate(ctx context.Context, opts ...BrowserOption) (*B
 		a.wg.Add(1) // for the io.Copy in a separate goroutine
 	}
 	go func() {
+		Logger.Debug("CHROMEDP: Waiting for process to be finished")
 		// First wait for the process to be finished.
 		// TODO: do we care about this error in any scenario? if the
 		// user cancelled the context and killed chrome, this will most
 		// likely just be "signal: killed", which isn't interesting.
 		cmd.Wait()
 
+		Logger.Debug("CHROMEDP: Wait is complete")
 		// Then delete the temporary user data directory, if needed.
 		if removeDir {
 			if err := os.RemoveAll(dataDir); c.cancelErr == nil {
 				c.cancelErr = err
 			}
 		}
+		Logger.Debug("CHROMEDP: Close worker group")
 		a.wg.Done()
+		Logger.Debug("CHROMEDP: Closing channel")
 		close(c.allocated)
 	}()
 

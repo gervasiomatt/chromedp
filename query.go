@@ -141,12 +141,12 @@ func Query(sel interface{}, opts ...QueryOption) QueryAction {
 	}
 
 	if s.by == nil {
-		Logger.Debug("Querying %s by search", s.selAsString())
+		Logger.Debug("CHROMEDP: Querying %s by search", s.selAsString())
 		BySearch(s)
 	}
 
 	if s.wait == nil {
-		Logger.Debug("Querying %s by node ready", s.selAsString())
+		Logger.Debug("CHROMEDP: Querying %s by node ready", s.selAsString())
 		NodeReady(s)
 	}
 
@@ -239,7 +239,7 @@ func (s *Selector) selAsString() string {
 // waitReady waits for the specified nodes to be ready.
 func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContextID, *cdp.Node) error) func(context.Context, *cdp.Frame, runtime.ExecutionContextID, ...cdp.NodeID) ([]*cdp.Node, error) {
 	return func(ctx context.Context, cur *cdp.Frame, execCtx runtime.ExecutionContextID, ids ...cdp.NodeID) ([]*cdp.Node, error) {
-		Logger.Debug("selector %s is waiting ready", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s is waiting ready", s.selAsString())
 		nodes := make([]*cdp.Node, len(ids))
 		cur.RLock()
 		for i, id := range ids {
@@ -252,7 +252,7 @@ func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContex
 		}
 		cur.RUnlock()
 
-		Logger.Debug("selector %s cur is unlocked", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s cur is unlocked", s.selAsString())
 
 		if check != nil {
 			errc := make(chan error, 1)
@@ -274,11 +274,11 @@ func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContex
 			}
 			close(errc)
 			if first != nil {
-				Logger.Debug("selector %s is returning first", s.selAsString())
+				Logger.Debug("CHROMEDP: selector %s is returning first", s.selAsString())
 				return nil, first
 			}
 		}
-		Logger.Debug("selector %s is returning nodes", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s is returning nodes", s.selAsString())
 		return nodes, nil
 	}
 }
@@ -351,25 +351,25 @@ func ByID(s *Selector) {
 // command. It matches nodes by plain text, CSS selector or XPath query.
 func BySearch(s *Selector) {
 	ByFunc(func(ctx context.Context, n *cdp.Node) ([]cdp.NodeID, error) {
-		Logger.Debug("selector %s is performing dom search", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s is performing dom search", s.selAsString())
 		id, count, err := dom.PerformSearch(s.selAsString()).Do(ctx)
 		if err != nil {
-			Logger.Debug("selector %s returning err on perform search", s.selAsString())
+			Logger.Debug("CHROMEDP: selector %s returning err on perform search", s.selAsString())
 			return nil, err
 		}
 
 		if count < 1 {
-			Logger.Debug("selector %s is returning cause count < 1", s.selAsString())
+			Logger.Debug("CHROMEDP: selector %s is returning cause count < 1", s.selAsString())
 			return []cdp.NodeID{}, nil
 		}
 
-		Logger.Debug("selector %s is performing dom search results", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s is performing dom search results", s.selAsString())
 		nodes, err := dom.GetSearchResults(id, 0, count).Do(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		Logger.Debug("selector %s is returning from BySearch", s.selAsString())
+		Logger.Debug("CHROMEDP: selector %s is returning from BySearch", s.selAsString())
 		return nodes, nil
 	})(s)
 }
@@ -447,7 +447,7 @@ func WaitFunc(wait func(context.Context, *cdp.Frame, runtime.ExecutionContextID,
 // NodeReady is an element query option to wait until all queried element nodes
 // have been sent by the browser.
 func NodeReady(s *Selector) {
-	Logger.Debug("Wait for %s to be ready", s.selAsString())
+	Logger.Debug("CHROMEDP: Wait for %s to be ready", s.selAsString())
 	WaitFunc(s.waitReady(nil))(s)
 }
 
