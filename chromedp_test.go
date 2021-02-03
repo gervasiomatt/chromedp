@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"io/ioutil"
 	"log"
@@ -78,6 +79,10 @@ func init() {
 var browserOpts []ContextOption
 
 func TestMain(m *testing.M) {
+	godotenv.Load("test.env")
+	Initialize()
+	defer Close()
+
 	var cancel context.CancelFunc
 	allocCtx, cancel = NewExecAllocator("", context.Background(), allocOpts...)
 

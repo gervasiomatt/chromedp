@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rs/xid"
 	"log"
 	"os"
 	"sync"
@@ -74,12 +75,13 @@ type Browser struct {
 	// userDataDir can be initialized by the allocators which set up user
 	// data dirs directly.
 	userDataDir string
+
+	identifier string
 }
 
 // NewBrowser creates a new browser. Typically, this function wouldn't be called
 // directly, as the Allocator interface takes care of it.
 func NewBrowser(ctx context.Context, urlstr string, opts ...BrowserOption) (*Browser, error) {
-	Logger.Debug("CHROMEDP: Creating a new browser")
 	b := &Browser{
 		LostConnection:    make(chan struct{}),
 		closingGracefully: make(chan struct{}),
@@ -92,7 +94,11 @@ func NewBrowser(ctx context.Context, urlstr string, opts ...BrowserOption) (*Bro
 		cmdQueue: make(chan *cdproto.Message, 32),
 
 		logf: log.Printf,
+
+		identifier: xid.New().String(),
 	}
+	Logger.Debug("CHROMEDP: Creating a new browser with identifier %s", b.identifier)
+
 	// apply options
 	for _, o := range opts {
 		o(b)
@@ -194,7 +200,7 @@ func (b *Browser) execute(ctx context.Context, method string, params easyjson.Ma
 		Method: cdproto.MethodType(method),
 		Params: buf,
 	}
-	Logger.Debug("CHROMEDP: Sending command %s to browser", string(buf))
+	Logger.Debug("CHROMEDP: %s Sending command %s to browser", b.identifier, string(buf))
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -259,6 +265,8 @@ func (b *Browser) run(ctx context.Context) {
 				b.listenersMu.Unlock()
 
 				if ev, ok := ev.(*target.EventDetachedFromTarget); ok {
+					Logger.Debug("CHROMEDP: %s received detatched from target event for session ID %q", b.identifier, ev.SessionID)
+					Logger.Debug("CHROMEDP: %s event looks like %+v", b.identifier, ev)
 					delTabQueue <- ev.SessionID
 				}
 
@@ -277,32 +285,37 @@ func (b *Browser) run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			Logger.Debug("CHROMEDP: RUN CONTEXT IS DONE")
+			Logger.Debug("CHROMEDP: %s RUN CONTEXT IS DONE", b.identifier)
 			return
 
 		case msg := <-b.cmdQueue:
 			if err := b.conn.Write(ctx, msg); err != nil {
-				Logger.Debug("CHROMEDP: Error received on command %s", err)
+				Logger.Debug("CHROMEDP: %s Error received on command %s", b.identifier, err)
 				b.errf("%s", err)
 				continue
 			}
 
 		case t := <-b.newTabQueue:
 			if _, ok := b.pages[t.SessionID]; ok {
+				Logger.Debug("CHROMEDP: %s Executor %q already exists", b.identifier, t.SessionID)
 				b.errf("executor for %q already exists", t.SessionID)
 			}
+			Logger.Debug("CHROMEDP: %s Added tab %q", b.identifier, t.SessionID)
 			b.pages[t.SessionID] = t
 
 		case sessionID := <-delTabQueue:
 			if _, ok := b.pages[sessionID]; !ok {
+				Logger.Debug("CHROMEDP: %s Executor %q doesn't exist", b.identifier, sessionID)
 				b.errf("executor for %q doesn't exist", sessionID)
 			}
+			Logger.Debug("CHROMEDP: %s Deleting session ID %q", b.identifier, sessionID)
 			delete(b.pages, sessionID)
 
 		case m := <-incomingQueue:
 			page, ok := b.pages[m.SessionID]
 			if !ok {
-				Logger.Debug("CHROMEDP: Received event from page already closed?")
+				Logger.Debug("CHROMEDP: %s Received event from page already closed? ID = %q", b.identifier, m.SessionID)
+				Logger.Debug("CHROMEDP: %s message looks like %+v", b.identifier, m)
 				// A page we recently closed still sending events.
 				continue
 			}
@@ -314,7 +327,7 @@ func (b *Browser) run(ctx context.Context) {
 			}
 
 		case <-b.LostConnection:
-			Logger.Debug("CHROMEDP: LOST CONNECTION DETECTED!")
+			Logger.Debug("CHROMEDP: %s LOST CONNECTION DETECTED!", b.identifier)
 			return // to avoid "write: broken pipe" errors
 		}
 	}

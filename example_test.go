@@ -19,8 +19,8 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/cdproto/target"
+	"github.com/chromedp/chromedp/device"
 	"github.com/gervasiomatt/chromedp"
-	"github.com/gervasiomatt/chromedp/device"
 )
 
 func writeHTML(content string) http.Handler {
