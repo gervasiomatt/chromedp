@@ -129,7 +129,8 @@ type Selector struct {
 //
 // The NodeNotPresent option causes the query to wait until there are no
 // element nodes matching the selector.
-func Query(sel interface{}, opts ...QueryOption) QueryAction {
+func Query(targetUuid string, sel interface{}, opts ...QueryOption) QueryAction {
+	Logger.Debug("%s CHROMEDP: Creating selector object for %s", targetUuid, sel)
 	s := &Selector{
 		sel: sel,
 		exp: 1,
@@ -140,13 +141,15 @@ func Query(sel interface{}, opts ...QueryOption) QueryAction {
 		o(s)
 	}
 
+	Logger.Debug("%s CHROMEDP: Selector %s opts applied", targetUuid, sel)
+
 	if s.by == nil {
-		Logger.Debug("CHROMEDP: Querying %s by search", s.selAsString())
+		Logger.Debug("%s CHROMEDP: Querying %s by search", targetUuid, s.selAsString())
 		BySearch(s)
 	}
 
 	if s.wait == nil {
-		Logger.Debug("CHROMEDP: Querying %s by node ready", s.selAsString())
+		Logger.Debug("%s CHROMEDP: Querying %s by node ready", targetUuid, s.selAsString())
 		NodeReady(s)
 	}
 
@@ -283,7 +286,7 @@ func (s *Selector) waitReady(check func(context.Context, runtime.ExecutionContex
 // sel. Waits until the visibility conditions of the query have been met, after
 // which executes f.
 func QueryAfter(sel interface{}, f func(context.Context, runtime.ExecutionContextID, ...*cdp.Node) error, opts ...QueryOption) QueryAction {
-	return Query(sel, append(opts, After(f))...)
+	return Query("QueryAfter", sel, append(opts, After(f))...)
 }
 
 // QueryOption is an element query action option.
@@ -311,8 +314,11 @@ func ByFunc(f func(context.Context, *cdp.Node) ([]cdp.NodeID, error)) QueryOptio
 //
 // Similar to calling document.querySelector() in the browser.
 func ByQuery(s *Selector) {
+	Logger.Debug("CHROMEDP: Querying %s by query", s.selAsString())
 	ByFunc(func(ctx context.Context, n *cdp.Node) ([]cdp.NodeID, error) {
+		Logger.Debug("CHROMEDP: dom query selector %s running", s.selAsString())
 		nodeID, err := dom.QuerySelector(n.NodeID, s.selAsString()).Do(ctx)
+		Logger.Debug("CHROMEDP: dom query selector %s returned nodeID %d and error %s", s.selAsString(), nodeID, err)
 		if err != nil {
 			return nil, err
 		}
@@ -461,9 +467,12 @@ func evalInCtx(ctx context.Context, execCtx runtime.ExecutionContextID, expressi
 // NodeVisible is an element query option to wait until all queried element
 // nodes have been sent by the browser and are visible.
 func NodeVisible(s *Selector) {
+	Logger.Debug("CHROMEDP: Wait for %s to be NodeVisible", s.selAsString())
 	WaitFunc(s.waitReady(func(ctx context.Context, execCtx runtime.ExecutionContextID, n *cdp.Node) error {
 		// check box model
+		Logger.Debug("CHROMEDP:Checking box model for %s", s.selAsString())
 		_, err := dom.GetBoxModel().WithNodeID(n.NodeID).Do(ctx)
+		Logger.Debug("CHROMEDP: Got %s result with error %s", s.selAsString(), err)
 		if err != nil {
 			if isCouldNotComputeBoxModelError(err) {
 				return ErrNotVisible
@@ -474,11 +483,14 @@ func NodeVisible(s *Selector) {
 
 		// check visibility
 		var res bool
+		Logger.Debug("CHROMEDP: Check for visible js eval %s", s.selAsString())
 		err = evalInCtx(ctx, execCtx, snippet(visibleJS, cashX(true), s, n), &res, withContextID(execCtx))
 		if err != nil {
+			Logger.Debug("CHROMEDP: %s returned err %s", s.selAsString(), err)
 			return err
 		}
 		if !res {
+			Logger.Debug("CHROMEDP: %s returned !res", s.selAsString())
 			return ErrNotVisible
 		}
 		return nil
@@ -584,38 +596,38 @@ func After(f func(context.Context, runtime.ExecutionContextID, ...*cdp.Node) err
 // WaitReady is an element query action that waits until the element matching
 // the selector is ready (ie, has been "loaded").
 func WaitReady(sel interface{}, opts ...QueryOption) QueryAction {
-	return Query(sel, opts...)
+	return Query("WaitReady", sel, opts...)
 }
 
 // WaitVisible is an element query action that waits until the element matching
 // the selector is visible.
 func WaitVisible(targetUuid string, sel interface{}, opts ...QueryOption) QueryAction {
-	Logger.Debug("%s Waiting for %s to become visible", targetUuid, sel)
-	return Query(sel, append(opts, NodeVisible)...)
+	Logger.Debug("%s CHROMEDP: Waiting for %s to become visible", targetUuid, sel)
+	return Query(targetUuid, sel, append(opts, NodeVisible)...)
 }
 
 // WaitNotVisible is an element query action that waits until the element
 // matching the selector is not visible.
 func WaitNotVisible(sel interface{}, opts ...QueryOption) QueryAction {
-	return Query(sel, append(opts, NodeNotVisible)...)
+	return Query("WaitNotVisible", sel, append(opts, NodeNotVisible)...)
 }
 
 // WaitEnabled is an element query action that waits until the element matching
 // the selector is enabled (ie, does not have attribute 'disabled').
 func WaitEnabled(sel interface{}, opts ...QueryOption) QueryAction {
-	return Query(sel, append(opts, NodeEnabled)...)
+	return Query("WaitEnabled", sel, append(opts, NodeEnabled)...)
 }
 
 // WaitSelected is an element query action that waits until the element
 // matching the selector is selected (ie, has attribute 'selected').
 func WaitSelected(sel interface{}, opts ...QueryOption) QueryAction {
-	return Query(sel, append(opts, NodeSelected)...)
+	return Query("WaitSelected", sel, append(opts, NodeSelected)...)
 }
 
 // WaitNotPresent is an element query action that waits until no elements are
 // present matching the selector.
 func WaitNotPresent(sel interface{}, opts ...QueryOption) QueryAction {
-	return Query(sel, append(opts, NodeNotPresent)...)
+	return Query("WaitNotPresent", sel, append(opts, NodeNotPresent)...)
 }
 
 // Nodes is an element query action that retrieves the document element nodes

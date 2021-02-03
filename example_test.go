@@ -19,8 +19,8 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/cdproto/target"
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/device"
+	"github.com/gervasiomatt/chromedp"
+	"github.com/gervasiomatt/chromedp/device"
 )
 
 func writeHTML(content string) http.Handler {
@@ -31,7 +31,7 @@ func writeHTML(content string) http.Handler {
 }
 
 func ExampleTitle() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`
@@ -58,7 +58,7 @@ func ExampleTitle() {
 }
 
 func ExampleRunResponse() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	// This server simply shows the URL path as the page title, and contains
@@ -127,11 +127,11 @@ func ExampleExecAllocator() {
 		chromedp.UserDataDir(dir),
 	)
 
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	allocCtx, cancel := chromedp.NewExecAllocator("", context.Background(), opts...)
 	defer cancel()
 
 	// also set up a custom logger
-	taskCtx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
+	taskCtx, cancel := chromedp.NewContext("", allocCtx, chromedp.WithLogf(log.Printf))
 	defer cancel()
 
 	// ensure that the browser process is started
@@ -169,7 +169,7 @@ func ExampleNewContext_reuseBrowser() {
 	defer ts.Close()
 
 	// create a new browser
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	// start the browser without a timeout
@@ -181,7 +181,7 @@ func ExampleNewContext_reuseBrowser() {
 		// look at the page twice, with a timeout set up; we skip
 		// cancels for the sake of brevity
 		ctx, _ := context.WithTimeout(ctx, time.Second)
-		ctx, _ = chromedp.NewContext(ctx)
+		ctx, _ = chromedp.NewContext("", ctx)
 		var cookies string
 		if err := chromedp.Run(ctx,
 			chromedp.Navigate(ts.URL),
@@ -199,7 +199,7 @@ func ExampleNewContext_reuseBrowser() {
 
 func ExampleNewContext_manyTabs() {
 	// new browser, first tab
-	ctx1, cancel := chromedp.NewContext(context.Background())
+	ctx1, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	// ensure the first tab is created
@@ -208,7 +208,7 @@ func ExampleNewContext_manyTabs() {
 	}
 
 	// same browser, second tab
-	ctx2, _ := chromedp.NewContext(ctx1)
+	ctx2, _ := chromedp.NewContext("", ctx1)
 
 	// ensure the second tab is created
 	if err := chromedp.Run(ctx2); err != nil {
@@ -227,7 +227,7 @@ func ExampleNewContext_manyTabs() {
 }
 
 func ExampleListenTarget_consoleLog() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`
@@ -274,7 +274,7 @@ func ExampleListenTarget_consoleLog() {
 }
 
 func ExampleWaitNewTarget() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	mux := http.NewServeMux()
@@ -295,7 +295,7 @@ func ExampleWaitNewTarget() {
 	); err != nil {
 		panic(err)
 	}
-	newCtx, cancel := chromedp.NewContext(ctx, chromedp.WithTargetID(<-ch))
+	newCtx, cancel := chromedp.NewContext("", ctx, chromedp.WithTargetID(<-ch))
 	defer cancel()
 
 	var urlstr string
@@ -309,7 +309,7 @@ func ExampleWaitNewTarget() {
 }
 
 func ExampleListenTarget_acceptAlert() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	mux := http.NewServeMux()
@@ -344,7 +344,7 @@ func ExampleListenTarget_acceptAlert() {
 }
 
 func Example_retrieveHTML() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`
@@ -381,7 +381,7 @@ function changeText() {
 }
 
 func ExampleEmulate() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	var buf []byte
@@ -401,7 +401,7 @@ func ExampleEmulate() {
 }
 
 func ExamplePrintToPDF() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	var buf []byte
@@ -425,7 +425,7 @@ func ExamplePrintToPDF() {
 }
 
 func ExampleByJSPath() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`
@@ -460,7 +460,7 @@ func ExampleByJSPath() {
 }
 
 func ExampleFromNode() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`
@@ -508,7 +508,7 @@ func ExampleFromNode() {
 }
 
 func Example_documentDump() {
-	ctx, cancel := chromedp.NewContext(context.Background())
+	ctx, cancel := chromedp.NewContext("", context.Background())
 	defer cancel()
 
 	ts := httptest.NewServer(writeHTML(`<!doctype html>
@@ -531,7 +531,7 @@ func Example_documentDump() {
 	if err := chromedp.Run(ctx,
 		chromedp.Navigate(ts.URL),
 		chromedp.Nodes(`document`, &nodes, chromedp.ByJSPath),
-		chromedp.WaitVisible(`#content`),
+		chromedp.WaitVisible("", `#content`),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			s := fmt.Sprintf(expr, "thing", "a new thing!")
 			_, exp, err := runtime.Evaluate(s).Do(ctx)
@@ -543,7 +543,7 @@ func Example_documentDump() {
 			}
 			return nil
 		}),
-		chromedp.WaitVisible(`#thing`),
+		chromedp.WaitVisible("", `#thing`),
 	); err != nil {
 		panic(err)
 	}

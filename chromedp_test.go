@@ -79,7 +79,7 @@ var browserOpts []ContextOption
 
 func TestMain(m *testing.M) {
 	var cancel context.CancelFunc
-	allocCtx, cancel = NewExecAllocator(context.Background(), allocOpts...)
+	allocCtx, cancel = NewExecAllocator("", context.Background(), allocOpts...)
 
 	if debug := os.Getenv("CHROMEDP_DEBUG"); debug != "" && debug != "false" {
 		browserOpts = append(browserOpts, WithDebugf(log.Printf))
@@ -111,7 +111,7 @@ func testAllocate(tb testing.TB, name string) (context.Context, context.CancelFu
 
 	// Same browser, new tab; not needing to start new chrome browsers for
 	// each test gives a huge speed-up.
-	ctx, _ := NewContext(browserCtx)
+	ctx, _ := NewContext("", browserCtx)
 
 	// Only navigate if we want an html file name, otherwise leave the blank page.
 	if name != "" {
@@ -130,7 +130,7 @@ func testAllocate(tb testing.TB, name string) (context.Context, context.CancelFu
 
 func testAllocateSeparate(tb testing.TB) (context.Context, context.CancelFunc) {
 	// Entirely new browser, unlike testAllocate.
-	ctx, _ := NewContext(allocCtx, browserOpts...)
+	ctx, _ := NewContext("", allocCtx, browserOpts...)
 	if err := Run(ctx); err != nil {
 		tb.Fatal(err)
 	}
@@ -151,18 +151,18 @@ func testAllocateSeparate(tb testing.TB) (context.Context, context.CancelFunc) {
 func BenchmarkTabNavigate(b *testing.B) {
 	b.ReportAllocs()
 
-	allocCtx, cancel := NewExecAllocator(context.Background(), allocOpts...)
+	allocCtx, cancel := NewExecAllocator("", context.Background(), allocOpts...)
 	defer cancel()
 
 	// start the browser
-	bctx, _ := NewContext(allocCtx)
+	bctx, _ := NewContext("", allocCtx)
 	if err := Run(bctx); err != nil {
 		b.Fatal(err)
 	}
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ctx, _ := NewContext(bctx)
+			ctx, _ := NewContext("", bctx)
 			if err := Run(ctx,
 				Navigate(testdataDir+"/form.html"),
 				WaitVisible(`#form`, ByID),
@@ -210,7 +210,7 @@ func TestTargets(t *testing.T) {
 	checkTargets(t, ctx1, 1)
 
 	// Start a second tab on the same browser.
-	ctx2, cancel2 := NewContext(ctx1)
+	ctx2, cancel2 := NewContext("", ctx1)
 	defer cancel2()
 	if err := Run(ctx2); err != nil {
 		t.Fatal(err)
@@ -249,7 +249,7 @@ func TestCancelError(t *testing.T) {
 	}
 
 	// Open and close a target normally; no error.
-	ctx2, cancel2 := NewContext(ctx1)
+	ctx2, cancel2 := NewContext("", ctx1)
 	defer cancel2()
 	if err := Run(ctx2); err != nil {
 		t.Fatal(err)
@@ -279,7 +279,7 @@ func TestPrematureCancel(t *testing.T) {
 	t.Parallel()
 
 	// Cancel before the browser is allocated.
-	ctx, _ := NewContext(allocCtx, browserOpts...)
+	ctx, _ := NewContext("", allocCtx, browserOpts...)
 	if err := Cancel(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +297,7 @@ func TestPrematureCancelTab(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx2, cancel := NewContext(ctx1)
+	ctx2, cancel := NewContext("", ctx1)
 	// Cancel after the browser is allocated, but before we've created a new
 	// tab.
 	cancel()
@@ -310,12 +310,12 @@ func TestPrematureCancelAllocator(t *testing.T) {
 	t.Parallel()
 
 	// To ensure we don't actually fire any Chrome processes.
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		ExecPath("/do-not-run-chrome"))
 	// Cancel before the browser is allocated.
 	cancel()
 
-	ctx, cancel := NewContext(allocCtx)
+	ctx, cancel := NewContext("", allocCtx)
 	defer cancel()
 	if err := Run(ctx); err != context.Canceled {
 		t.Fatalf("wanted canceled context error, got %v", err)
@@ -326,13 +326,13 @@ func TestConcurrentCancel(t *testing.T) {
 	t.Parallel()
 
 	// To ensure we don't actually fire any Chrome processes.
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		ExecPath("/do-not-run-chrome"))
 	defer cancel()
 
 	// 50 is enough for 'go test -race' to easily spot issues.
 	for i := 0; i < 50; i++ {
-		ctx, cancel := NewContext(allocCtx)
+		ctx, cancel := NewContext("", allocCtx)
 		go cancel()
 		go Run(ctx)
 	}
@@ -361,7 +361,7 @@ func TestListenBrowser(t *testing.T) {
 		}
 	})
 
-	newTabCtx, cancel := NewContext(ctx)
+	newTabCtx, cancel := NewContext("", ctx)
 	defer cancel()
 	if err := Run(newTabCtx, Navigate(testdataDir+"/form.html")); err != nil {
 		t.Fatal(err)
@@ -556,7 +556,7 @@ func TestLogOptions(t *testing.T) {
 		bufMu.Unlock()
 	}
 
-	ctx, cancel := NewContext(context.Background(),
+	ctx, cancel := NewContext("", context.Background(),
 		WithErrorf(fn),
 		WithLogf(fn),
 		WithDebugf(fn),
@@ -686,7 +686,7 @@ func TestGracefulBrowserShutdown(t *testing.T) {
 		Headless,
 		UserDataDir(dir),
 	}
-	actx, cancel := NewExecAllocator(context.Background(), opts...)
+	actx, cancel := NewExecAllocator("", context.Background(), opts...)
 	defer cancel()
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -701,7 +701,7 @@ func TestGracefulBrowserShutdown(t *testing.T) {
 	defer ts.Close()
 
 	{
-		ctx, _ := NewContext(actx)
+		ctx, _ := NewContext("", actx)
 		if err := Run(ctx, Navigate(ts.URL+"/set")); err != nil {
 			t.Fatal(err)
 		}
@@ -712,7 +712,7 @@ func TestGracefulBrowserShutdown(t *testing.T) {
 		}
 	}
 	{
-		ctx, _ := NewContext(actx)
+		ctx, _ := NewContext("", actx)
 		var got string
 		if err := Run(ctx,
 			Navigate(ts.URL),
@@ -755,7 +755,7 @@ func TestAttachingToWorkers(t *testing.T) {
 			ts := httptest.NewServer(mux)
 			defer ts.Close()
 
-			ctx, cancel := NewContext(context.Background())
+			ctx, cancel := NewContext("", context.Background())
 			defer cancel()
 
 			ch := make(chan target.ID, 1)
@@ -774,7 +774,7 @@ func TestAttachingToWorkers(t *testing.T) {
 			}
 
 			targetID := <-ch
-			ctx, cancel = NewContext(ctx, WithTargetID(targetID))
+			ctx, cancel = NewContext("", ctx, WithTargetID(targetID))
 			defer cancel()
 
 			if err := Run(ctx, ActionFunc(func(ctx context.Context) error {

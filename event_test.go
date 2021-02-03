@@ -170,7 +170,7 @@ func TestWaitNewTarget(t *testing.T) {
 	if err := Run(ctx, Click("#new-tab", ByID)); err != nil {
 		t.Fatal(err)
 	}
-	blankCtx, cancel := NewContext(ctx, WithTargetID(<-ch))
+	blankCtx, cancel := NewContext("", ctx, WithTargetID(<-ch))
 	defer cancel()
 
 	var urlstr string

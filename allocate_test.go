@@ -18,13 +18,13 @@ import (
 func TestExecAllocator(t *testing.T) {
 	t.Parallel()
 
-	allocCtx, cancel := NewExecAllocator(context.Background(), allocOpts...)
+	allocCtx, cancel := NewExecAllocator("", context.Background(), allocOpts...)
 	defer cancel()
 
 	// TODO: test that multiple child contexts are run in different
 	// processes and browsers.
 
-	taskCtx, cancel := NewContext(allocCtx)
+	taskCtx, cancel := NewContext("", allocCtx)
 	defer cancel()
 
 	want := "insert"
@@ -50,13 +50,13 @@ func TestExecAllocator(t *testing.T) {
 func TestExecAllocatorCancelParent(t *testing.T) {
 	t.Parallel()
 
-	allocCtx, allocCancel := NewExecAllocator(context.Background(), allocOpts...)
+	allocCtx, allocCancel := NewExecAllocator("", context.Background(), allocOpts...)
 	defer allocCancel()
 
 	// TODO: test that multiple child contexts are run in different
 	// processes and browsers.
 
-	taskCtx, _ := NewContext(allocCtx)
+	taskCtx, _ := NewContext("", allocCtx)
 	if err := Run(taskCtx); err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestExecAllocatorKillBrowser(t *testing.T) {
 func TestSkipNewContext(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := NewExecAllocator(context.Background(), allocOpts...)
+	ctx, cancel := NewExecAllocator("", context.Background(), allocOpts...)
 	defer cancel()
 
 	// Using the allocator context directly (without calling NewContext)
@@ -160,7 +160,7 @@ func TestRemoteAllocator(t *testing.T) {
 	allocCtx, allocCancel := NewRemoteAllocator(context.Background(), wsURL)
 	defer allocCancel()
 
-	taskCtx, taskCancel := NewContext(allocCtx,
+	taskCtx, taskCancel := NewContext("", allocCtx,
 		// This used to crash when used with RemoteAllocator.
 		WithLogf(func(format string, args ...interface{}) {}),
 	)
@@ -195,7 +195,7 @@ func TestRemoteAllocator(t *testing.T) {
 	// Check that cancel closed the tabs. Don't just count the
 	// number of targets, as perhaps the initial blank tab hasn't
 	// come up yet.
-	targetsCtx, targetsCancel := NewContext(allocCtx)
+	targetsCtx, targetsCancel := NewContext("", allocCtx)
 	defer targetsCancel()
 	infos, err := Targets(targetsCtx)
 	if err != nil {
@@ -212,7 +212,7 @@ func TestRemoteAllocator(t *testing.T) {
 	// Run should error way before the 5s timeout.
 	// TODO: a "defer cancel()" here adds a 1s timeout, since we try to
 	// close the target twice. Fix that.
-	ctx, _ := NewContext(allocCtx)
+	ctx, _ := NewContext("", allocCtx)
 	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -235,13 +235,13 @@ func TestRemoteAllocator(t *testing.T) {
 func TestExecAllocatorMissingWebsocketAddr(t *testing.T) {
 	t.Parallel()
 
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		// Use a bad listen address, so Chrome exits straight away.
 		append([]ExecAllocatorOption{Flag("remote-debugging-address", "_")},
 			allocOpts...)...)
 	defer cancel()
 
-	ctx, cancel := NewContext(allocCtx)
+	ctx, cancel := NewContext("", allocCtx)
 	defer cancel()
 
 	want := regexp.MustCompile(`failed to start:\n.*Invalid devtools`)
@@ -255,14 +255,14 @@ func TestCombinedOutput(t *testing.T) {
 	t.Parallel()
 
 	buf := new(bytes.Buffer)
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		append([]ExecAllocatorOption{
 			CombinedOutput(buf),
 			Flag("enable-logging", true),
 		}, allocOpts...)...)
 	defer cancel()
 
-	taskCtx, _ := NewContext(allocCtx)
+	taskCtx, _ := NewContext("", allocCtx)
 	if err := Run(taskCtx,
 		Navigate(testdataDir+"/consolespam.html"),
 	); err != nil {
@@ -286,7 +286,7 @@ func TestCombinedOutputError(t *testing.T) {
 	// away, as there was no output to copy and the CombinedOutput would
 	// never signal it's done.
 	buf := new(bytes.Buffer)
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		// Use a bad listen address, so Chrome exits straight away.
 		append([]ExecAllocatorOption{
 			Flag("remote-debugging-address", "_"),
@@ -294,7 +294,7 @@ func TestCombinedOutputError(t *testing.T) {
 		}, allocOpts...)...)
 	defer cancel()
 
-	ctx, cancel := NewContext(allocCtx)
+	ctx, cancel := NewContext("", allocCtx)
 	defer cancel()
 	got := fmt.Sprint(Run(ctx))
 	want := "failed to start"
@@ -307,13 +307,13 @@ func TestEnv(t *testing.T) {
 	t.Parallel()
 
 	tz := "Australia/Melbourne"
-	allocCtx, cancel := NewExecAllocator(context.Background(),
+	allocCtx, cancel := NewExecAllocator("", context.Background(),
 		append([]ExecAllocatorOption{
 			Env("TZ=" + tz),
 		}, allocOpts...)...)
 	defer cancel()
 
-	ctx, cancel := NewContext(allocCtx)
+	ctx, cancel := NewContext("", allocCtx)
 	defer cancel()
 
 	var ret string
@@ -342,7 +342,7 @@ func TestWithBrowserOptionAlreadyAllocated(t *testing.T) {
 	}()
 	// This needs to panic, as we try to set up a browser logf function
 	// after the browser has already been set up earlier.
-	_, _ = NewContext(ctx,
+	_, _ = NewContext("", ctx,
 		WithLogf(func(format string, args ...interface{}) {}),
 	)
 }
