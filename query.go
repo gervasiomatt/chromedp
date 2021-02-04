@@ -316,9 +316,9 @@ func ByFunc(f func(context.Context, *cdp.Node) ([]cdp.NodeID, error)) QueryOptio
 func ByQuery(s *Selector) {
 	Logger.Debug("CHROMEDP: Querying %s by query", s.selAsString())
 	ByFunc(func(ctx context.Context, n *cdp.Node) ([]cdp.NodeID, error) {
-		Logger.Debug("CHROMEDP: dom query selector %s running", s.selAsString())
+		conditionalLog(s.selAsString() + ".domQuerySelector", fmt.Sprintf("CHROMEDP: dom query selector %s running", s.selAsString()))
 		nodeID, err := dom.QuerySelector(n.NodeID, s.selAsString()).Do(ctx)
-		Logger.Debug("CHROMEDP: dom query selector %s returned nodeID %d and error %s", s.selAsString(), nodeID, err)
+		conditionalLog(s.selAsString() + "domQuerySelectorResp", fmt.Sprintf("CHROMEDP: dom query selector %s returned nodeID %d and error %v", s.selAsString(), nodeID, err))
 		if err != nil {
 			return nil, err
 		}
@@ -329,6 +329,29 @@ func ByQuery(s *Selector) {
 
 		return []cdp.NodeID{nodeID}, nil
 	})(s)
+}
+
+var logCache = make(map[string]time.Time)
+
+func conditionalLog(sel, msg string) {
+	var doLog = false
+
+	t1, ok := logCache[sel]
+	if ok {
+		t2 := time.Now()
+		diff := t2.Sub(t1)
+		if diff.Milliseconds() >= 1000 {
+			doLog = true
+			logCache[sel] = t2
+		}
+	} else {
+		doLog = true
+		logCache[sel] = time.Now()
+	}
+
+	if doLog {
+		Logger.Debug(msg)
+	}
 }
 
 // ByQueryAll is an element query action option to select elements by the
@@ -470,9 +493,9 @@ func NodeVisible(s *Selector) {
 	Logger.Debug("CHROMEDP: Wait for %s to be NodeVisible", s.selAsString())
 	WaitFunc(s.waitReady(func(ctx context.Context, execCtx runtime.ExecutionContextID, n *cdp.Node) error {
 		// check box model
-		Logger.Debug("CHROMEDP:Checking box model for %s", s.selAsString())
+		conditionalLog(s.selAsString() + ".NodeVisible", fmt.Sprintf("CHROMEDP: Checking box model for %s", s.selAsString()))
 		_, err := dom.GetBoxModel().WithNodeID(n.NodeID).Do(ctx)
-		Logger.Debug("CHROMEDP: Got %s result with error %s", s.selAsString(), err)
+		conditionalLog(s.selAsString() + ".boxModel", fmt.Sprintf("CHROMEDP: Got %s result with error %s", s.selAsString(), err))
 		if err != nil {
 			if isCouldNotComputeBoxModelError(err) {
 				return ErrNotVisible
