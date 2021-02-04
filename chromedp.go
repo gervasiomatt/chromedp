@@ -441,15 +441,17 @@ func WithBrowserOption(opts ...BrowserOption) ContextOption {
 // Note that if the actions trigger multiple navigations, only the first is
 // used. And if the actions trigger no navigations at all, RunResponse will
 // block until the context is cancelled.
-func RunResponse(ctx context.Context, actions ...Action) (*network.Response, error) {
+func RunResponse(targetUuid string, ctx context.Context, actions ...Action) (*network.Response, error) {
 	var resp *network.Response
-	if err := Run(ctx, responseAction(&resp, actions...)); err != nil {
+	if err := Run(ctx, responseAction(targetUuid, &resp, actions...)); err != nil {
+		Logger.Debug("%s CHROMEDP: RunResponse returning with error", targetUuid)
 		return nil, err
 	}
+	Logger.Debug("%s CHROMEDP: RunResponse returning success", targetUuid)
 	return resp, nil
 }
 
-func responseAction(resp **network.Response, actions ...Action) Action {
+func responseAction(targetUuid string, resp **network.Response, actions ...Action) Action {
 	return ActionFunc(func(ctx context.Context) error {
 		// loaderID lets us filter the requests from the currently
 		// loading navigation.
@@ -501,8 +503,11 @@ func responseAction(resp **network.Response, actions ...Action) Action {
 				// Ignore load events before the "init"
 				// lifecycle event, as those are old.
 				if hasInit {
+					Logger.Debug("%s CHROMEDP: Run page load has fired", targetUuid)
 					finished = true
 					lcancel()
+				} else {
+					Logger.Debug("%s CHROMEDP: Run page load fired before init", targetUuid)
 				}
 			}
 		}
@@ -554,14 +559,18 @@ func responseAction(resp **network.Response, actions ...Action) Action {
 			}
 		})
 
+		Logger.Debug("%s CHROMEDP: Run running actions", targetUuid)
+
 		// Second, run the actions.
 		if err := Run(ctx, actions...); err != nil {
 			return err
 		}
 
+		Logger.Debug("%s CHROMEDP: Run block until finish loading", targetUuid)
 		// Third, block until we have finished loading.
 		select {
 		case <-lctx.Done():
+			Logger.Debug("%s CHROMEDP: Run lctx is done", targetUuid)
 			if loadErr != nil {
 				return loadErr
 			}
@@ -577,6 +586,7 @@ func responseAction(resp **network.Response, actions ...Action) Action {
 			}
 			return nil
 		case <-ctx.Done():
+			Logger.Debug("%s CHROMEDP: ctx is done", targetUuid)
 			return ctx.Err()
 		}
 	})

@@ -143,7 +143,7 @@ func TestNodeOp(t *testing.T) {
 	// get document root
 	var nodes []*cdp.Node
 	if err := Run(ctx,
-		Navigate(s.URL),
+		Navigate("", s.URL),
 		Nodes(`//*`, &nodes),
 		Nodes(`document`, &nodes, ByJSPath),
 	); err != nil {

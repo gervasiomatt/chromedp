@@ -120,7 +120,7 @@ func testAllocate(tb testing.TB, name string) (context.Context, context.CancelFu
 
 	// Only navigate if we want an html file name, otherwise leave the blank page.
 	if name != "" {
-		if err := Run(ctx, Navigate(testdataDir+"/"+name)); err != nil {
+		if err := Run(ctx, Navigate("", testdataDir+"/"+name)); err != nil {
 			tb.Fatal(err)
 		}
 	}
@@ -169,7 +169,7 @@ func BenchmarkTabNavigate(b *testing.B) {
 		for pb.Next() {
 			ctx, _ := NewContext("", bctx)
 			if err := Run(ctx,
-				Navigate(testdataDir+"/form.html"),
+				Navigate("", testdataDir+"/form.html"),
 				WaitVisible(`#form`, ByID),
 			); err != nil {
 				b.Fatal(err)
@@ -368,7 +368,7 @@ func TestListenBrowser(t *testing.T) {
 
 	newTabCtx, cancel := NewContext("", ctx)
 	defer cancel()
-	if err := Run(newTabCtx, Navigate(testdataDir+"/form.html")); err != nil {
+	if err := Run(newTabCtx, Navigate("", testdataDir+"/form.html")); err != nil {
 		t.Fatal(err)
 	}
 	cancel()
@@ -403,7 +403,7 @@ func TestListenTarget(t *testing.T) {
 		}
 	})
 
-	if err := Run(ctx, Navigate(testdataDir+"/form.html")); err != nil {
+	if err := Run(ctx, Navigate("", testdataDir+"/form.html")); err != nil {
 		t.Fatal(err)
 	}
 	cancel()
@@ -435,7 +435,7 @@ func TestLargeEventCount(t *testing.T) {
 	})
 
 	if err := Run(ctx,
-		Navigate(testdataDir+"/consolespam.html"),
+		Navigate("", testdataDir+"/consolespam.html"),
 		WaitVisible("#done", ByID), // wait for the JS to finish
 	); err != nil {
 		t.Fatal(err)
@@ -465,7 +465,7 @@ func TestLargeQuery(t *testing.T) {
 	// receiving any result.
 	var nodes []*cdp.Node
 	if err := Run(ctx,
-		Navigate(s.URL),
+		Navigate("", s.URL),
 		Nodes("a", &nodes, ByQueryAll),
 	); err != nil {
 		t.Fatal(err)
@@ -538,7 +538,7 @@ func TestListenCancel(t *testing.T) {
 		cancel2()
 	})
 
-	if err := Run(ctx, Navigate(testdataDir+"/form.html")); err != nil {
+	if err := Run(ctx, Navigate("", testdataDir+"/form.html")); err != nil {
 		t.Fatal(err)
 	}
 	if want := 1; browserCount != 1 {
@@ -567,7 +567,7 @@ func TestLogOptions(t *testing.T) {
 		WithDebugf(fn),
 	)
 	defer cancel()
-	if err := Run(ctx, Navigate(testdataDir+"/form.html")); err != nil {
+	if err := Run(ctx, Navigate("", testdataDir+"/form.html")); err != nil {
 		t.Fatal(err)
 	}
 	cancel()
@@ -664,7 +664,7 @@ func TestDownloadIntoDir(t *testing.T) {
 	defer s.Close()
 
 	if err := Run(ctx,
-		Navigate(s.URL),
+		Navigate("", s.URL),
 		page.SetDownloadBehavior(page.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(dir),
 		Click("#download", ByQuery),
 	); err != nil {
@@ -707,7 +707,7 @@ func TestGracefulBrowserShutdown(t *testing.T) {
 
 	{
 		ctx, _ := NewContext("", actx)
-		if err := Run(ctx, Navigate(ts.URL+"/set")); err != nil {
+		if err := Run(ctx, Navigate("", ts.URL+"/set")); err != nil {
 			t.Fatal(err)
 		}
 
@@ -720,7 +720,7 @@ func TestGracefulBrowserShutdown(t *testing.T) {
 		ctx, _ := NewContext("", actx)
 		var got string
 		if err := Run(ctx,
-			Navigate(ts.URL),
+			Navigate("", ts.URL),
 			EvaluateAsDevTools("document.cookie", &got),
 		); err != nil {
 			t.Fatal(err)
@@ -774,7 +774,7 @@ func TestAttachingToWorkers(t *testing.T) {
 				}
 			})
 
-			if err := Run(ctx, Navigate(ts.URL)); err != nil {
+			if err := Run(ctx, Navigate("", ts.URL)); err != nil {
 				t.Fatalf("Failed to navigate to the test page: %q", err)
 			}
 
@@ -955,7 +955,7 @@ func TestRunResponse(t *testing.T) {
 			ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 			t.Cleanup(cancel)
 
-			if err := Run(ctx, Navigate(ts.URL+"/index")); err != nil {
+			if err := Run(ctx, Navigate("", ts.URL+"/index")); err != nil {
 				t.Fatalf("Failed to navigate to the test page: %q", err)
 			}
 			return ctx
@@ -994,7 +994,7 @@ func TestRunResponse(t *testing.T) {
 			if !strings.Contains(url, "/") {
 				url = ts.URL + "/" + url
 			}
-			resp, err := RunResponse(ctx, Navigate(url))
+			resp, err := RunResponse("", ctx, Navigate("", url))
 			checkResults(t, resp, err)
 		})
 		t.Run("Click"+test.name, func(t *testing.T) {
@@ -1005,7 +1005,7 @@ func TestRunResponse(t *testing.T) {
 			if !strings.Contains(test.url, "/") {
 				query = "#url_" + test.url
 			}
-			resp, err := RunResponse(ctx, Click(query, ByQuery))
+			resp, err := RunResponse("", ctx, Click(query, ByQuery))
 			checkResults(t, resp, err)
 		})
 	}
@@ -1036,20 +1036,20 @@ func TestRunResponse_noResponse(t *testing.T) {
 		action   Action
 		wantResp bool
 	}{
-		{"FirstNavigation", Navigate(ts.URL + "/200"), true},
-		{"RepeatedNavigation", Navigate(ts.URL + "/200"), true},
-		{"FragmentNavigation", Navigate(ts.URL + "/200#foo"), false},
+		{"FirstNavigation", Navigate("", ts.URL + "/200"), true},
+		{"RepeatedNavigation", Navigate("", ts.URL + "/200"), true},
+		{"FragmentNavigation", Navigate("", ts.URL + "/200#foo"), false},
 
 		{"FirstClick", Click("#same", ByQuery), true},
 		{"RepeatedClick", Click("#same", ByQuery), true},
 		{"FragmentClick", Click("#fragment", ByQuery), false},
 
-		{"Blank", Navigate("about:blank"), false},
+		{"Blank", Navigate("", "about:blank"), false},
 	}
 	// Don't use sub-tests, as these are all sequential steps that can't
 	// happen independently of each other.
 	for _, step := range steps {
-		resp, err := RunResponse(ctx, step.action)
+		resp, err := RunResponse("", ctx, step.action)
 		if err != nil {
 			t.Fatalf("%s: %v", step.name, err)
 		}

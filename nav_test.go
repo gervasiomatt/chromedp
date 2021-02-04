@@ -26,8 +26,8 @@ func TestNavigate(t *testing.T) {
 
 	var urlstr, title string
 	if err := Run(ctx,
-		Location(&urlstr),
-		Title(&title),
+		Location("", &urlstr),
+		Title("", &title),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestNavigationEntries(t *testing.T) {
 	expIdx, expEntries := 1, 2
 	for i, test := range tests {
 		if err := Run(ctx,
-			Navigate(testdataDir+"/"+test.file),
+			Navigate("", testdataDir+"/"+test.file),
 			NavigationEntries(&index, &entries),
 		); err != nil {
 			t.Fatal(err)
@@ -96,7 +96,7 @@ func TestNavigateToHistoryEntry(t *testing.T) {
 	var index int64
 	if err := Run(ctx,
 		NavigationEntries(&index, &entries),
-		Navigate(testdataDir+"/form.html"),
+		Navigate("", testdataDir+"/form.html"),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestNavigateToHistoryEntry(t *testing.T) {
 	var title string
 	if err := Run(ctx,
 		NavigateToHistoryEntry(entries[index].ID),
-		Title(&title),
+		Title("", &title),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -121,12 +121,12 @@ func TestNavigateBack(t *testing.T) {
 
 	var title, exptitle string
 	if err := Run(ctx,
-		Title(&exptitle),
+		Title("", &exptitle),
 
-		Navigate(testdataDir+"/image.html"),
+		Navigate("", testdataDir+"/image.html"),
 
 		NavigateBack(),
-		Title(&title),
+		Title("", &title),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -144,13 +144,13 @@ func TestNavigateForward(t *testing.T) {
 
 	var title, exptitle string
 	if err := Run(ctx,
-		Navigate(testdataDir+"/image.html"),
-		Title(&exptitle),
+		Navigate("", testdataDir+"/image.html"),
+		Title("", &exptitle),
 
 		NavigateBack(),
 		NavigateForward(),
 
-		Title(&title),
+		Title("", &title),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -192,10 +192,10 @@ func TestReload(t *testing.T) {
 
 	var firstTitle, secondTitle string
 	if err := Run(ctx,
-		Navigate(s.URL),
-		Title(&firstTitle),
+		Navigate("", s.URL),
+		Title("", &firstTitle),
 		Reload(),
-		Title(&secondTitle),
+		Title("", &secondTitle),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +244,7 @@ func TestLocation(t *testing.T) {
 	defer cancel()
 
 	var urlstr string
-	if err := Run(ctx, Location(&urlstr)); err != nil {
+	if err := Run(ctx, Location("", &urlstr)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -260,7 +260,7 @@ func TestTitle(t *testing.T) {
 	defer cancel()
 
 	var title string
-	if err := Run(ctx, Title(&title)); err != nil {
+	if err := Run(ctx, Title("", &title)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -318,7 +318,7 @@ func TestNavigateContextTimeout(t *testing.T) {
 	}))
 	defer s.Close()
 
-	if err := Run(ctx, Navigate(s.URL)); err != nil && err != context.Canceled {
+	if err := Run(ctx, Navigate("", s.URL)); err != nil && err != context.Canceled {
 		t.Fatal(err)
 	}
 }
@@ -367,8 +367,8 @@ func TestNavigateWhileLoading(t *testing.T) {
 			ch <- struct{}{}
 			return nil
 		}),
-		Navigate(testdataDir+"/image.html"),
-		Title(&title),
+		Navigate("", testdataDir+"/image.html"),
+		Title("", &title),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -427,7 +427,7 @@ func TestNavigateCancelled(t *testing.T) {
 		<-loadStarted
 		cancel2()
 	}()
-	if _, err := RunResponse(ctx2, action); !errors.Is(err, context.Canceled) {
+	if _, err := RunResponse("", ctx2, action); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected error to be %q, got: %v", context.Canceled, err)
 	}
 }

@@ -46,8 +46,8 @@ func ExampleTitle() {
 
 	var title string
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
-		chromedp.Title(&title),
+		chromedp.Navigate("", ts.URL),
+		chromedp.Title("", &title),
 	); err != nil {
 		panic(err)
 	}
@@ -76,8 +76,8 @@ func ExampleRunResponse() {
 	// once the page is ready.
 	var firstTitle string
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
-		chromedp.Title(&firstTitle),
+		chromedp.Navigate("", ts.URL),
+		chromedp.Title("", &firstTitle),
 	); err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func ExampleRunResponse() {
 	// However, actions like Click don't always trigger a page navigation,
 	// so they don't wait for a page load directly. Wrapping them with
 	// RunResponse does that waiting, and also obtains the HTTP response.
-	resp, err := chromedp.RunResponse(ctx, chromedp.Click("#foo", chromedp.ByID))
+	resp, err := chromedp.RunResponse("", ctx, chromedp.Click("#foo", chromedp.ByID))
 	if err != nil {
 		panic(err)
 	}
@@ -95,14 +95,14 @@ func ExampleRunResponse() {
 	// Grabbing the title again should work, as the page has finished
 	// loading once more.
 	var secondTitle string
-	if err := chromedp.Run(ctx, chromedp.Title(&secondTitle)); err != nil {
+	if err := chromedp.Run(ctx, chromedp.Title("", &secondTitle)); err != nil {
 		panic(err)
 	}
 	fmt.Println("second title:", secondTitle)
 
 	// Finally, it's always possible to wrap Navigate with RunResponse, if
 	// one wants the response information for that case too.
-	resp, err = chromedp.RunResponse(ctx, chromedp.Navigate(ts.URL+"/bar"))
+	resp, err = chromedp.RunResponse("", ctx, chromedp.Navigate("", ts.URL+"/bar"))
 	if err != nil {
 		panic(err)
 	}
@@ -184,7 +184,7 @@ func ExampleNewContext_reuseBrowser() {
 		ctx, _ = chromedp.NewContext("", ctx)
 		var cookies string
 		if err := chromedp.Run(ctx,
-			chromedp.Navigate(ts.URL),
+			chromedp.Navigate("", ts.URL),
 			chromedp.Text("#cookies", &cookies),
 		); err != nil {
 			panic(err)
@@ -258,7 +258,7 @@ func ExampleListenTarget_consoleLog() {
 		}
 	})
 
-	if err := chromedp.Run(ctx, chromedp.Navigate(ts.URL)); err != nil {
+	if err := chromedp.Run(ctx, chromedp.Navigate("", ts.URL)); err != nil {
 		panic(err)
 	}
 	<-gotException
@@ -290,7 +290,7 @@ func ExampleWaitNewTarget() {
 		return info.URL != ""
 	})
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL+"/first"),
+		chromedp.Navigate("", ts.URL+"/first"),
 		chromedp.Click("#newtab", chromedp.ByID),
 	); err != nil {
 		panic(err)
@@ -299,7 +299,7 @@ func ExampleWaitNewTarget() {
 	defer cancel()
 
 	var urlstr string
-	if err := chromedp.Run(newCtx, chromedp.Location(&urlstr)); err != nil {
+	if err := chromedp.Run(newCtx, chromedp.Location("", &urlstr)); err != nil {
 		panic(err)
 	}
 	fmt.Println("new tab's path:", strings.TrimPrefix(urlstr, ts.URL))
@@ -333,7 +333,7 @@ func ExampleListenTarget_acceptAlert() {
 	})
 
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
+		chromedp.Navigate("", ts.URL),
 		chromedp.Click("#alert", chromedp.ByID),
 	); err != nil {
 		panic(err)
@@ -361,7 +361,7 @@ function changeText() {
 
 	var outerBefore, outerAfter string
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
+		chromedp.Navigate("", ts.URL),
 		chromedp.OuterHTML("#content", &outerBefore),
 		chromedp.Click("#content", chromedp.ByID),
 		chromedp.OuterHTML("#content", &outerAfter),
@@ -387,7 +387,7 @@ func ExampleEmulate() {
 	var buf []byte
 	if err := chromedp.Run(ctx,
 		chromedp.Emulate(device.IPhone7),
-		chromedp.Navigate(`https://google.com/`),
+		chromedp.Navigate("", `https://google.com/`),
 		chromedp.SendKeys(`input[name=q]`, "what's my user agent?\n"),
 		chromedp.WaitVisible(`#rso`, chromedp.ByID),
 		chromedp.CaptureScreenshot(&buf),
@@ -406,7 +406,7 @@ func ExamplePrintToPDF() {
 
 	var buf []byte
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(`https://godoc.org/github.com/chromedp/chromedp`),
+		chromedp.Navigate("", `https://godoc.org/github.com/chromedp/chromedp`),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var err error
 			buf, _, err = page.PrintToPDF().
@@ -438,7 +438,7 @@ func ExampleByJSPath() {
 	var ids []cdp.NodeID
 	var html string
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
+		chromedp.Navigate("", ts.URL),
 		chromedp.NodeIDs(`document`, &ids, chromedp.ByJSPath),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var err error
@@ -473,7 +473,7 @@ func ExampleFromNode() {
 
 	var nodes []*cdp.Node
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
+		chromedp.Navigate("", ts.URL),
 		chromedp.Nodes("#section", &nodes, chromedp.ByQuery),
 	); err != nil {
 		panic(err)
@@ -529,7 +529,7 @@ func Example_documentDump() {
 
 	var nodes []*cdp.Node
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate(ts.URL),
+		chromedp.Navigate("", ts.URL),
 		chromedp.Nodes(`document`, &nodes, chromedp.ByJSPath),
 		chromedp.WaitVisible("", `#content`),
 		chromedp.ActionFunc(func(ctx context.Context) error {

@@ -926,7 +926,7 @@ func TestClick(t *testing.T) {
 			if err := Run(ctx,
 				Click(test.sel, test.by),
 				WaitVisible("#icon-brankas", ByID),
-				Title(&title),
+				Title("", &title),
 			); err != nil {
 				t.Fatalf("got error: %v", err)
 			}
@@ -1134,7 +1134,7 @@ func TestSubmit(t *testing.T) {
 			if err := Run(ctx,
 				Submit(test.sel, test.by),
 				WaitVisible("#icon-brankas", ByID),
-				Title(&title),
+				Title("", &title),
 			); err != nil {
 				t.Fatalf("got error: %v", err)
 			}
@@ -1290,7 +1290,7 @@ func TestFileUpload(t *testing.T) {
 
 			var result string
 			if err := Run(ctx,
-				Navigate(s.URL),
+				Navigate("", s.URL),
 				test.a,
 				Click(`input[name="submit"]`),
 				Text(`#result`, &result, ByID, NodeVisible),

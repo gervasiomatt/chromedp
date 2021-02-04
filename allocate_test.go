@@ -30,7 +30,7 @@ func TestExecAllocator(t *testing.T) {
 	want := "insert"
 	var got string
 	if err := Run(taskCtx,
-		Navigate(testdataDir+"/form.html"),
+		Navigate("", testdataDir+"/form.html"),
 		Text("#foo", &got, ByID),
 	); err != nil {
 		t.Fatal(err)
@@ -95,7 +95,7 @@ func TestExecAllocatorKillBrowser(t *testing.T) {
 
 	// Run should error with something other than "deadline exceeded" in
 	// much less than 3s.
-	switch err := Run(ctx, Navigate(s.URL)); err {
+	switch err := Run(ctx, Navigate("", s.URL)); err {
 	case nil:
 		// TODO: figure out why this happens sometimes on Travis
 		// t.Fatal("did not expect a nil error")
@@ -112,7 +112,7 @@ func TestSkipNewContext(t *testing.T) {
 
 	// Using the allocator context directly (without calling NewContext)
 	// should be an immediate error.
-	err := Run(ctx, Navigate(testdataDir+"/form.html"))
+	err := Run(ctx, Navigate("", testdataDir+"/form.html"))
 
 	want := ErrInvalidContext
 	if err != want {
@@ -179,7 +179,7 @@ func TestRemoteAllocator(t *testing.T) {
 	want := "insert"
 	var got string
 	if err := Run(taskCtx,
-		Navigate(testdataDir+"/form.html"),
+		Navigate("", testdataDir+"/form.html"),
 		Text("#foo", &got, ByID),
 	); err != nil {
 		t.Fatal(err)
@@ -223,7 +223,7 @@ func TestRemoteAllocator(t *testing.T) {
 	if err := cmd.Process.Signal(os.Kill); err != nil {
 		t.Error(err)
 	}
-	switch err := Run(ctx, Navigate(testdataDir+"/form.html")); err {
+	switch err := Run(ctx, Navigate("", testdataDir+"/form.html")); err {
 	case nil:
 		// TODO: figure out why this happens sometimes on Travis
 		// t.Fatal("did not expect a nil error")
@@ -264,7 +264,7 @@ func TestCombinedOutput(t *testing.T) {
 
 	taskCtx, _ := NewContext("", allocCtx)
 	if err := Run(taskCtx,
-		Navigate(testdataDir+"/consolespam.html"),
+		Navigate("", testdataDir+"/consolespam.html"),
 	); err != nil {
 		t.Fatal(err)
 	}

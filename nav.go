@@ -16,8 +16,9 @@ import (
 type NavigateAction Action
 
 // Navigate is an action that navigates the current frame.
-func Navigate(urlstr string) NavigateAction {
-	return responseAction(nil, ActionFunc(func(ctx context.Context) error {
+func Navigate(targetUuid, urlstr string) NavigateAction {
+	Logger.Debug("%s CHROMEDP: Navigate called with urlstr %s", targetUuid, urlstr)
+	return responseAction(targetUuid, nil, ActionFunc(func(ctx context.Context) error {
 		_, _, errorText, err := page.Navigate(urlstr).Do(ctx)
 		if err != nil {
 			return err
@@ -46,13 +47,13 @@ func NavigationEntries(currentIndex *int64, entries *[]*page.NavigationEntry) Ac
 // NavigateToHistoryEntry is an action to navigate to the specified navigation
 // entry.
 func NavigateToHistoryEntry(entryID int64) NavigateAction {
-	return responseAction(nil, page.NavigateToHistoryEntry(entryID))
+	return responseAction("NavigateToHistoryEntry", nil, page.NavigateToHistoryEntry(entryID))
 }
 
 // NavigateBack is an action that navigates the current frame backwards in its
 // history.
 func NavigateBack() NavigateAction {
-	return responseAction(nil, ActionFunc(func(ctx context.Context) error {
+	return responseAction("NavigateBack", nil, ActionFunc(func(ctx context.Context) error {
 		cur, entries, err := page.GetNavigationHistory().Do(ctx)
 		if err != nil {
 			return err
@@ -70,7 +71,7 @@ func NavigateBack() NavigateAction {
 // NavigateForward is an action that navigates the current frame forwards in
 // its history.
 func NavigateForward() NavigateAction {
-	return responseAction(nil, ActionFunc(func(ctx context.Context) error {
+	return responseAction("NavigateForward", nil, ActionFunc(func(ctx context.Context) error {
 		cur, entries, err := page.GetNavigationHistory().Do(ctx)
 		if err != nil {
 			return err
@@ -87,7 +88,7 @@ func NavigateForward() NavigateAction {
 
 // Reload is an action that reloads the current page.
 func Reload() NavigateAction {
-	return responseAction(nil, page.Reload())
+	return responseAction("Reload", nil, page.Reload())
 }
 
 // Stop is an action that stops all navigation and pending resource retrieval.
@@ -115,17 +116,21 @@ func CaptureScreenshot(res *[]byte) Action {
 }
 
 // Location is an action that retrieves the document location.
-func Location(urlstr *string) Action {
+func Location(targetUuid string, urlstr *string) Action {
 	if urlstr == nil {
 		panic("urlstr cannot be nil")
 	}
-	return EvaluateAsDevTools(`document.location.toString()`, urlstr)
+	u := EvaluateAsDevTools(`document.location.toString()`, urlstr)
+	Logger.Debug("%s CHROMEDP: Returning location", targetUuid)
+	return u
 }
 
 // Title is an action that retrieves the document title.
-func Title(title *string) Action {
+func Title(targetUuid string, title *string) Action {
 	if title == nil {
 		panic("title cannot be nil")
 	}
-	return EvaluateAsDevTools(`document.title`, title)
+	t := EvaluateAsDevTools(`document.title`, title)
+	Logger.Debug("%s CHROMEDP: Returning title", targetUuid)
+	return t
 }

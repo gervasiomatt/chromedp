@@ -149,7 +149,7 @@ func TestCloseDialog(t *testing.T) {
 			})
 
 			if err := Run(ctx,
-				Navigate(testdataDir+"/dialog.html"),
+				Navigate("", testdataDir+"/dialog.html"),
 				Click(test.sel, ByID, NodeVisible),
 			); err != nil {
 				t.Fatal(err)
@@ -175,7 +175,7 @@ func TestWaitNewTarget(t *testing.T) {
 
 	var urlstr string
 	if err := Run(blankCtx,
-		Location(&urlstr),
+		Location("", &urlstr),
 		WaitVisible(`#form`, ByID),
 	); err != nil {
 		t.Fatal(err)
