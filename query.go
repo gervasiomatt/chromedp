@@ -376,25 +376,25 @@ func ByID(s *Selector) {
 // command. It matches nodes by plain text, CSS selector or XPath query.
 func BySearch(s *Selector) {
 	ByFunc(func(ctx context.Context, n *cdp.Node) ([]cdp.NodeID, error) {
-		Logger.Debug("CHROMEDP: selector %s is performing dom search", s.selAsString())
+		conditionalLog(s.selAsString() + ".performSearch", fmt.Sprintf("CHROMEDP: selector %s is performing dom search", s.selAsString()))
 		id, count, err := dom.PerformSearch(s.selAsString()).Do(ctx)
 		if err != nil {
-			Logger.Debug("CHROMEDP: selector %s returning err on perform search", s.selAsString())
+			conditionalLog(s.selAsString() + ".performSearchErr", fmt.Sprintf("CHROMEDP: selector %s returning err on perform search", s.selAsString()))
 			return nil, err
 		}
 
 		if count < 1 {
-			Logger.Debug("CHROMEDP: selector %s is returning cause count < 1", s.selAsString())
+			conditionalLog(s.selAsString() + ".count", fmt.Sprintf("CHROMEDP: selector %s is returning cause count < 1", s.selAsString()))
 			return []cdp.NodeID{}, nil
 		}
 
-		Logger.Debug("CHROMEDP: selector %s is performing dom search results", s.selAsString())
+		conditionalLog(s.selAsString() + ".searchResults", fmt.Sprintf("CHROMEDP: selector %s is performing dom search results", s.selAsString()))
 		nodes, err := dom.GetSearchResults(id, 0, count).Do(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		Logger.Debug("CHROMEDP: selector %s is returning from BySearch", s.selAsString())
+		conditionalLog(s.selAsString() + ".searchResultsReturn", fmt.Sprintf("CHROMEDP: selector %s is returning from BySearch", s.selAsString()))
 		return nodes, nil
 	})(s)
 }
