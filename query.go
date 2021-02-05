@@ -316,7 +316,7 @@ func ByFunc(f func(context.Context, *cdp.Node) ([]cdp.NodeID, error)) QueryOptio
 func ByQuery(s *Selector) {
 	Logger.Debug("CHROMEDP: Querying %s by query", s.selAsString())
 	ByFunc(func(ctx context.Context, n *cdp.Node) ([]cdp.NodeID, error) {
-		conditionalLog(s.selAsString() + ".domQuerySelector", fmt.Sprintf("CHROMEDP: dom query selector %s running", s.selAsString()))
+		conditionalLog(s.selAsString() + ".domQuerySelector", fmt.Sprintf("CHROMEDP: dom query selector %s - %v running", s.selAsString(), n.NodeID))
 		nodeID, err := dom.QuerySelector(n.NodeID, s.selAsString()).Do(ctx)
 		conditionalLog(s.selAsString() + "domQuerySelectorResp", fmt.Sprintf("CHROMEDP: dom query selector %s returned nodeID %d and error %v", s.selAsString(), nodeID, err))
 		if err != nil {
