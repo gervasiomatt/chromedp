@@ -315,7 +315,7 @@ func (b *Browser) run(ctx context.Context) {
 			page, ok := b.pages[m.SessionID]
 			if !ok {
 				Logger.Debug("CHROMEDP: %s Received event from page already closed? ID = %q", b.identifier, m.SessionID)
-				Logger.Debug("CHROMEDP: %s message looks like %+v", b.identifier, m)
+				// Logger.Debug("CHROMEDP: %s message looks like %+v", b.identifier, m) this log is causing npe?
 				// A page we recently closed still sending events.
 				continue
 			}
