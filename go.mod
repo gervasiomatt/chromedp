@@ -12,5 +12,6 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/mailru/easyjson v0.7.6
 	github.com/rs/xid v1.2.1
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/sys v0.0.0-20210122093101-04d7465088b8 // indirect
 )

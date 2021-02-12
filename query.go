@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/sync/syncmap"
 	"math"
 	"strconv"
 	"strings"
@@ -331,22 +332,22 @@ func ByQuery(s *Selector) {
 	})(s)
 }
 
-var logCache = make(map[string]time.Time)
+var logCache = syncmap.Map{}
 
 func conditionalLog(sel, msg string) {
 	var doLog = false
 
-	t1, ok := logCache[sel]
+	t1, ok := logCache.Load(sel)
 	if ok {
 		t2 := time.Now()
-		diff := t2.Sub(t1)
+		diff := t2.Sub(t1.(time.Time))
 		if diff.Milliseconds() >= 1000 {
 			doLog = true
-			logCache[sel] = t2
+			logCache.Store(sel, t2)
 		}
 	} else {
 		doLog = true
-		logCache[sel] = time.Now()
+		logCache.Store(sel, time.Now())
 	}
 
 	if doLog {
